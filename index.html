@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auto Loan Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0b2f6b;
+    --navy-2: #12408f;
+    --gold: #f2b705;
+    --bg: #eef3fa;
+    --card: #ffffff;
+    --ink: #1c2433;
+    --muted: #5d6b82;
+    --line: #d7e0ee;
+    --tint: #e6eefb;
+    --error: #c62828;
+    --ok: #1b7f4b;
+    --ok-bg: #e5f5ec;
+    --disabled: #eef1f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1420; --card: #152033; --ink: #e8eef8; --muted: #9aa8bf;
+      --line: #2a3a55; --tint: #1b2a44; --navy: #1d4fa3; --navy-2: #4a80e0;
+      --error: #ff6b6b; --ok: #4cc38a; --ok-bg: #143326; --disabled: #1a2638;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1420; --card: #152033; --ink: #e8eef8; --muted: #9aa8bf;
+    --line: #2a3a55; --tint: #1b2a44; --navy: #1d4fa3; --navy-2: #4a80e0;
+    --error: #ff6b6b; --ok: #4cc38a; --ok-bg: #143326; --disabled: #1a2638;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Nunito Sans", system-ui, sans-serif; }
+  header { background: #0b2f6b; color: #fff; }
+  .bar { max-width: 1120px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .logo { font-weight: 800; font-size: 20px; letter-spacing: .3px; }
+  .logo span { color: var(--gold); }
+  .bar nav { display: flex; gap: 18px; font-size: 14px; opacity: .9; }
+  .bar nav a { color: inherit; text-decoration: none; }
+  .bar .spacer { flex: 1; }
+  .mock { background: var(--gold); color: #1c2433; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 99px; }
+  .vswitch { display: inline-flex; background: rgba(255,255,255,.12); border-radius: 99px; padding: 3px; }
+  .vswitch button { flex: none; border: 0; background: transparent; color: #fff; padding: 5px 14px; border-radius: 99px; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .vswitch button[aria-pressed="true"] { background: #fff; color: #0b2f6b; }
+  .notes-btn { background: transparent; border: 1px solid rgba(255,255,255,.5); color: #fff; border-radius: 99px; padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer; flex: none; }
+  .crumbs { max-width: 1120px; margin: 0 auto; padding: 14px 16px 0; font-size: 13px; color: var(--muted); }
+  .hero { max-width: 1120px; margin: 0 auto; padding: 6px 16px 18px; }
+  .hero h1 { margin: 0; font-size: 30px; }
+  .hero .promo { color: var(--navy-2); font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; }
+  .hero .vtag { font-size: 12px; font-weight: 800; color: var(--muted); margin-left: 8px; vertical-align: middle; border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px; }
+  main { max-width: 1120px; margin: 0 auto; padding: 0 16px 32px; display: grid; grid-template-columns: 380px minmax(0,1fr); gap: 20px; align-items: start; }
+  .card { background: var(--card); border-radius: 10px; box-shadow: 0 2px 10px rgba(11,47,107,.08); overflow: hidden; }
+  .card > h2 { margin: 0; background: #0b2f6b; color: #fff; font-size: 17px; padding: 14px 18px; }
+  .body { padding: 18px; }
+  .req { color: var(--navy-2); font-size: 13px; margin: 0 0 4px; }
+  label, .lbl { display: block; font-size: 13px; font-weight: 700; margin: 14px 0 6px; }
+  select, input[type=text] { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: var(--card); color: var(--ink); }
+  select:disabled, input:disabled { background: var(--disabled); color: var(--muted); cursor: not-allowed; }
+  input.invalid { border-color: var(--error); }
+  .err { color: var(--error); font-size: 12px; min-height: 16px; margin-top: 4px; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .actions { display: flex; gap: 10px; margin-top: 18px; }
+  .actions button { flex: 1; padding: 12px; border-radius: 6px; font: inherit; font-weight: 800; cursor: pointer; border: 2px solid var(--navy-2); }
+  .actions button:disabled { opacity: .45; cursor: not-allowed; }
+  .primary { background: var(--navy-2); color: #fff; }
+  .ghost { background: transparent; color: var(--navy-2); }
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 18px; border-bottom: 1px solid var(--line); }
+  .summary div small { display: block; color: var(--muted); font-size: 12px; }
+  .summary div b { font-size: 18px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { background: var(--tint); font-size: 15px; }
+  tbody th { font-weight: 700; font-size: 14px; white-space: normal; }
+  tbody th small { display: block; color: var(--navy-2); font-weight: 600; font-size: 11px; }
+  tr.hl td, tr.hl th { background: var(--tint); }
+  tr.hl td { font-weight: 800; font-size: 17px; }
+  tr.sub td, tr.sub th { color: var(--muted); font-size: 13px; }
+  td.neg { color: var(--ok); }
+  .notice { padding: 16px 18px; font-size: 13px; color: var(--muted); }
+  .notice h3 { margin: 0 0 6px; font-size: 13px; color: var(--ink); }
+  .notice ul { margin: 0; padding-left: 18px; }
+  .ctas { max-width: 1120px; margin: 0 auto; padding: 0 16px 40px; display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .cta { background: var(--card); border-radius: 10px; padding: 18px; box-shadow: 0 2px 10px rgba(11,47,107,.08); }
+  .cta p { margin: 0 0 10px; }
+  .cta a { color: var(--navy-2); font-weight: 800; text-decoration: none; }
+  footer { text-align: center; font-size: 12px; color: var(--muted); padding: 0 16px 30px; }
+  [hidden] { display: none !important; }
+
+  /* ---------- V2 ---------- */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label { margin: 0; text-align: center; padding: 10px; cursor: pointer; font-weight: 700; font-size: 14px; color: var(--muted); }
+  .seg input:checked + label { background: var(--navy-2); color: #fff; }
+  .seg input:focus-visible + label { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .radios { display: flex; gap: 18px; }
+  .radios label { margin: 0; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .tip { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--tint); color: var(--navy-2); font-size: 11px; font-weight: 800; cursor: help; margin-left: 4px; position: relative; }
+  .tip:hover::after, .tip:focus::after { content: attr(data-tip); position: absolute; left: 50%; bottom: 140%; transform: translateX(-50%); width: 230px; background: #1c2433; color: #fff; font-weight: 400; font-size: 12px; line-height: 1.4; padding: 8px 10px; border-radius: 6px; z-index: 5; }
+  .dp-row { display: grid; grid-template-columns: 1fr 76px; gap: 8px; align-items: center; }
+  .dp-pct { text-align: center; font-weight: 800; color: var(--navy-2); }
+  input[type=range] { width: 100%; accent-color: var(--navy-2); margin-top: 10px; }
+  input[type=range]:disabled { opacity: .4; }
+  .step { border: 1px solid var(--line); border-radius: 8px; margin-top: 12px; overflow: hidden; }
+  .step-h { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--tint); border: 0; font: inherit; font-weight: 800; color: var(--ink); cursor: pointer; text-align: left; }
+  .step-n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--navy-2); color: #fff; font-size: 12px; flex: none; }
+  .step.done .step-n { background: var(--ok); }
+  .step-h .chev { margin-left: auto; transition: transform .2s; }
+  .step.open .chev { transform: rotate(180deg); }
+  .step-b { padding: 4px 14px 14px; }
+  .step:not(.open) .step-b { display: none; }
+  .flat .step { border: 0; margin: 0; }
+  .flat .step-h { display: none; }
+  .flat .step-b { display: block !important; padding: 0; }
+  .flat .step + .step { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 2px; }
+  .addon { border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+  .addon > label:first-child { margin-top: 0; display: flex; gap: 8px; align-items: center; cursor: pointer; }
+  .scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .scroll-hint { font-size: 12px; color: var(--muted); padding: 8px 18px 0; display: flex; align-items: center; gap: 6px; }
+  .placeholder { padding: 28px 18px; color: var(--muted); text-align: center; }
+  .boxes { padding: 0 18px; display: grid; gap: 10px; margin-top: 14px; }
+  .box { border-radius: 8px; padding: 12px 14px; font-size: 14px; background: var(--tint); }
+  .box h4 { margin: 0 0 6px; font-size: 13px; }
+  .box .kv { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+  .box .kvs { display: flex; gap: 20px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+  .box.savings { background: var(--ok-bg); color: var(--ok); font-weight: 700; }
+  .box.disc { background: transparent; border: 1px solid var(--line); color: var(--muted); font-style: italic; }
+  .compare { padding: 14px 18px 0; }
+  .carousel { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+  .carousel .cta { flex: 0 0 280px; scroll-snap-align: start; }
+  .carousel-wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px 40px; }
+  .carousel-wrap h2 { font-size: 18px; margin: 0 0 12px; }
+  details.admin { max-width: 1120px; margin: 0 auto 28px; padding: 0 16px; font-size: 13px; color: var(--muted); }
+  details.admin summary { cursor: pointer; font-weight: 700; }
+  details.admin .opts { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 10px; background: var(--card); padding: 12px 14px; border-radius: 8px; }
+  details.admin label { margin: 0; font-weight: 600; display: flex; gap: 6px; align-items: center; color: var(--ink); }
+
+  /* Release notes dialog */
+  dialog { border: 0; border-radius: 12px; padding: 0; max-width: 640px; width: calc(100% - 32px); background: var(--card); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  dialog::backdrop { background: rgba(10,20,40,.55); }
+  .dlg-h { display: flex; align-items: center; justify-content: space-between; background: #0b2f6b; color: #fff; padding: 14px 18px; }
+  .dlg-h h2 { margin: 0; font-size: 18px; }
+  .dlg-h button { background: transparent; border: 0; color: #fff; font-size: 22px; cursor: pointer; line-height: 1; }
+  .dlg-b { padding: 6px 20px 20px; max-height: 70vh; overflow: auto; }
+  .rel { border-bottom: 1px solid var(--line); padding: 14px 0; }
+  .rel:last-child { border-bottom: 0; }
+  .rel h3 { margin: 0; font-size: 16px; }
+  .rel .meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .rel h4 { margin: 10px 0 4px; font-size: 13px; }
+  .rel ul { margin: 0; padding-left: 18px; font-size: 14px; }
+  .rel li { margin: 3px 0; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 99px; background: var(--tint); color: var(--navy-2); margin-left: 6px; vertical-align: middle; }
+
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; }
+    .ctas { grid-template-columns: 1fr; }
+    .bar nav { display: none; }
+    .summary { grid-template-columns: 1fr 1fr; }
+    th, td { padding: 10px 8px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="logo">Mock<span>Bank</span></div>
+    <nav><a href="#">Personal</a><a href="#">Business</a><a href="#">Wealth</a></nav>
+    <div class="spacer"></div>
+    <div class="vswitch" role="group" aria-label="Calculator version">
+      <button type="button" data-ver="1" aria-pressed="false">V1</button>
+      <button type="button" data-ver="2" aria-pressed="true">V2</button>
+    </div>
+    <button type="button" class="notes-btn" id="openNotes">Release notes</button>
+    <span class="mock">DEMO · NOT A REAL BANK</span>
+  </div>
+</header>
+
+<!-- ======================================================= V1 ======================================================= -->
+<div id="v1" hidden>
+  <div class="crumbs">Personal › Loans › Auto Loan › Wheels Fest › Calculator</div>
+  <div class="hero">
+    <div class="promo">Wheels Fest Promo</div>
+    <h1>Auto Loan Calculator <span class="vtag">V1</span></h1>
+  </div>
+
+  <main>
+    <section class="card">
+      <h2>Fill in with preferred details.</h2>
+      <form class="body" id="v1-form" novalidate>
+        <p class="req">(*) is a required field</p>
+
+        <label for="v1-brand">Brand</label>
+        <select id="v1-brand"><option value="">Select Brand</option></select>
+
+        <label for="v1-model">Model</label>
+        <select id="v1-model" disabled><option value="">Select Model</option></select>
+
+        <label for="v1-variant">Variant</label>
+        <select id="v1-variant" disabled><option value="">Select Variant</option></select>
+
+        <label for="v1-price">Vehicle Price*</label>
+        <input type="text" id="v1-price" inputmode="numeric" placeholder="PHP 500,000" autocomplete="off">
+        <div class="err" id="v1-priceErr"></div>
+
+        <label for="v1-term">Loan Term*</label>
+        <select id="v1-term">
+          <option value="60">60 months</option>
+          <option value="48">48 months</option>
+          <option value="36">36 months</option>
+          <option value="24">24 months</option>
+          <option value="18">18 months</option>
+          <option value="12">12 months</option>
+        </select>
+
+        <div class="actions">
+          <button type="submit" class="primary">Compute</button>
+          <button type="button" class="ghost" id="v1-reset">Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Results</h2>
+      <div class="summary">
+        <div><small>Vehicle Price</small><b id="v1-rPrice">-</b></div>
+        <div><small>Loan Term</small><b id="v1-rTerm">-</b></div>
+        <div><small>Annual Effective Interest Rate</small><b id="v1-rRate">-</b></div>
+      </div>
+      <div class="scroll-wrap">
+        <table>
+          <thead><tr><th>Downpayment Percentage</th><th>20%</th><th>30%</th></tr></thead>
+          <tbody id="v1-rows"></tbody>
+        </table>
+      </div>
+      <div class="notice">
+        <h3>IMPORTANT NOTICE</h3>
+        <ul>
+          <li>Computation reflects Wheels Fest promo rates. All amounts are in Philippine Peso.</li>
+          <li>Loan related fees exclude comprehensive motor insurance premium.</li>
+          <li>Vehicle prices are sample figures and may vary by location.</li>
+          <li>All computations are for illustration only and are not a loan approval or offer.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <div class="ctas">
+    <div class="cta"><p>Submit your loan application online.</p><a href="#">Apply Now →</a></div>
+    <div class="cta"><p>See how much you can borrow in a few clicks.</p><a href="#">Get Pre-qualified →</a></div>
+    <div class="cta"><p>Learn more about our Auto Loan.</p><a href="#">Learn More →</a></div>
+  </div>
+</div>
+
+<!-- ======================================================= V2 ======================================================= -->
+<div id="v2">
+  <div class="crumbs">Personal › Loans › Auto Loan › Auto Loan Calculator</div>
+  <div class="hero">
+    <div class="promo">Compare and save</div>
+    <h1>Auto Loan Calculator <span class="vtag">V2</span></h1>
+  </div>
+
+  <main>
+    <section class="card">
+      <h2>Fill in with preferred details.</h2>
+      <form class="body" id="v2-form" novalidate>
+        <p class="req">(*) is a required field</p>
+
+        <div id="v2-steps">
+          <!-- Step 1 -->
+          <div class="step open" data-step="1">
+            <button type="button" class="step-h"><span class="step-n">1</span>Your vehicle<span class="chev">▾</span></button>
+            <div class="step-b">
+              <span class="lbl">Vehicle Category*</span>
+              <div class="seg" role="radiogroup" aria-label="Vehicle category">
+                <input type="radio" name="cat" id="cat-new" value="new" checked><label for="cat-new">Brand New</label>
+                <input type="radio" name="cat" id="cat-used" value="used"><label for="cat-used">Pre-owned</label>
+              </div>
+
+              <div id="ehv-wrap">
+                <span class="lbl">Are you getting an Electric/Hybrid Vehicle?*
+                  <span class="tip" tabindex="0" data-tip="Electric and hybrid vehicles get lower interest rates and shorter loan terms (12 to 60 months).">i</span>
+                </span>
+                <div class="radios">
+                  <label><input type="radio" name="ehv" value="yes"> Yes</label>
+                  <label><input type="radio" name="ehv" value="no" checked> No</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step" data-step="2">
+            <button type="button" class="step-h"><span class="step-n">2</span>Price and payment<span class="chev">▾</span></button>
+            <div class="step-b">
+              <label for="v2-price">Vehicle Price*
+                <span class="tip" tabindex="0" data-tip="Enter the vehicle price to see the downpayment and 60-month monthly payment instantly. Or leave it blank and enter a Desired Monthly Payment instead.">i</span>
+              </label>
+              <input type="text" id="v2-price" inputmode="numeric" placeholder="Minimum 500,000" autocomplete="off">
+              <div class="err" id="v2-priceErr"></div>
+
+              <label for="v2-dp">Downpayment*
+                <span class="tip" tabindex="0" data-tip="Type an amount or drag the slider. Minimum is 20% for brand new and 30% for pre-owned vehicles.">i</span>
+              </label>
+              <div class="dp-row">
+                <input type="text" id="v2-dp" inputmode="numeric" placeholder="0" autocomplete="off" disabled>
+                <div class="dp-pct" id="v2-dpPct">–</div>
+              </div>
+              <input type="range" id="v2-dpSlider" min="20" max="80" step="1" value="20" disabled aria-label="Downpayment percentage">
+              <div class="err" id="v2-dpErr"></div>
+
+              <div id="loanAmtWrap" hidden>
+                <label for="v2-loanAmt">Loan Amount</label>
+                <input type="text" id="v2-loanAmt" disabled>
+              </div>
+
+              <label for="v2-monthly"><span id="monthlyLbl">Desired Monthly Payment</span>
+                <span class="tip" tabindex="0" id="monthlyTip" data-tip="Enter what you can pay each month and we will estimate the vehicle price you can afford over 60 months.">i</span>
+              </label>
+              <input type="text" id="v2-monthly" inputmode="numeric" placeholder="Minimum 8,000" autocomplete="off">
+              <div class="err" id="v2-monthlyErr"></div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step" data-step="3" id="addonStep">
+            <button type="button" class="step-h"><span class="step-n">3</span>Add-on loan related fees<span class="chev">▾</span></button>
+            <div class="step-b">
+              <p class="hint" style="margin-top:10px">Optional. Include these to see your total cost.</p>
+
+              <div class="addon">
+                <label><input type="checkbox" id="cmOn"> Chattel Mortgage Fees
+                  <span class="tip" tabindex="0" data-tip="Registration and processing fees for the chattel mortgage on the vehicle.">i</span>
+                </label>
+                <div id="cmOpts" hidden>
+                  <label for="cmMode">Mode of Payment</label>
+                  <select id="cmMode">
+                    <option value="">Select mode of payment</option>
+                    <option value="upfront">Upfront Payment</option>
+                    <option value="financed">All-In Financing (add to loan)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="addon" id="insAddon">
+                <label><input type="checkbox" id="insOn"> Comprehensive Motor Insurance
+                  <span class="tip" tabindex="0" data-tip="The premium depends on the vehicle body type. Multi-year cover runs for the whole loan term.">i</span>
+                </label>
+                <div id="insOpts" hidden>
+                  <label for="bodyType">Vehicle Body Type</label>
+                  <select id="bodyType">
+                    <option value="">Select body type</option>
+                  </select>
+                  <label for="insCover">Coverage</label>
+                  <select id="insCover">
+                    <option value="">Select coverage</option>
+                    <option value="first">First Year</option>
+                    <option value="multi">Multi-Year (full loan term)</option>
+                  </select>
+                  <label for="insMode">Mode of Payment</label>
+                  <select id="insMode">
+                    <option value="">Select mode of payment</option>
+                    <option value="upfront">Upfront Payment</option>
+                    <option value="financed">All-In Financing (add to loan)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="primary" id="v2-compute" disabled>Compute</button>
+          <button type="button" class="ghost" id="v2-reset" disabled>Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Results</h2>
+      <div class="summary">
+        <div><small>Vehicle Price</small><b id="v2-rPrice">-</b></div>
+        <div><small>Downpayment</small><b id="v2-rDp">-</b></div>
+        <div><small>Annual Effective Interest Rate <span id="v2-rRateTerm">(60 months)</span></small><b id="v2-rRate">-</b></div>
+      </div>
+      <div id="v2-placeholder" class="placeholder">Fill in your details and click <b>Compute</b> to see your estimates for each loan term.</div>
+      <div id="v2-results" hidden>
+        <div class="scroll-hint">Scroll sideways to see all loan terms ⟷</div>
+        <div class="scroll-wrap">
+          <table>
+            <thead id="v2-head"></thead>
+            <tbody id="v2-rows"></tbody>
+          </table>
+        </div>
+        <div class="boxes" id="v2-boxes"></div>
+        <div class="compare">
+          <label for="v2-dealer" style="margin-top:4px">Compare with a dealer quote (monthly payment, <span id="dealerTerm">60</span> months)</label>
+          <input type="text" id="v2-dealer" inputmode="numeric" placeholder="e.g. 18,500" autocomplete="off">
+        </div>
+        <div class="boxes" id="v2-savings"></div>
+      </div>
+      <div class="notice">
+        <h3>IMPORTANT NOTICE</h3>
+        <ul>
+          <li>All amounts are in Philippine Peso. Monthly amortization uses the add-on (STD) rate for each term.</li>
+          <li>Chattel mortgage fees and insurance premiums are estimates. Your account officer gives the final figures.</li>
+          <li>All computations are for illustration only and are not a loan approval or offer.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <div class="carousel-wrap">
+    <h2>Quick tools</h2>
+    <div class="carousel">
+      <div class="cta"><p>Find the right car for your budget.</p><a href="#">Auto Finder →</a></div>
+      <div class="cta"><p>See how much you can borrow in a few clicks.</p><a href="#">Get Pre-qualified →</a></div>
+      <div class="cta"><p>Submit your loan application online.</p><a href="#">Apply Now →</a></div>
+      <div class="cta"><p>Learn more about our Auto Loan.</p><a href="#">Learn More →</a></div>
+      <div class="cta"><p>Planning a home too? Try our home loan calculator.</p><a href="#">Home Loan Calculator →</a></div>
+    </div>
+  </div>
+
+  <details class="admin">
+    <summary>Author settings (demo of AEM configuration)</summary>
+    <div class="opts">
+      <label><input type="checkbox" id="cfgStepper" checked> Use accordion stepper</label>
+      <label><input type="checkbox" id="cfgAddonMonthly"> Show add-on fees when Desired Monthly Payment is used</label>
+      <label><input type="checkbox" id="cfgInsEhv"> Hide motor insurance for electric/hybrid vehicles</label>
+    </div>
+  </details>
+</div>
+
+<footer>Mock application for demonstration. Brands, vehicles, rates and prices are illustrative.</footer>
+
+<!-- ================================================ Release notes ================================================ -->
+<dialog id="notes" aria-labelledby="notesTitle">
+  <div class="dlg-h"><h2 id="notesTitle">Release notes</h2><button type="button" id="closeNotes" aria-label="Close">×</button></div>
+  <div class="dlg-b">
+    <div class="rel">
+      <h3>Version 2.0 <span class="badge">Current</span></h3>
+      <div class="meta">13 November 2026 · Business Request BRQ-RT-7643827 (Auto Loan Calculator Enhancement)</div>
+      <h4>New</h4>
+      <ul>
+        <li><b>Vehicle category</b>: choose Brand New or Pre-owned. The form changes to show only the fields that apply (ALC-02).</li>
+        <li><b>Electric/Hybrid question</b>: answering Yes applies the lower EHV rates and opens the 12 to 60 month terms (ALC-02, Annex 1).</li>
+        <li><b>Downpayment field and slider</b>: they stay in step with each other. They unlock once a valid vehicle price is entered. Minimum is 20% for brand new and 30% for pre-owned (ALC-02, ALC-03.1).</li>
+        <li><b>Desired Monthly Payment</b>: enter a monthly budget to get the vehicle price and loan amount you can afford over 60 months (48 months for pre-owned) (ALC-03.1).</li>
+        <li><b>Instant estimates</b>: the downpayment and monthly payment update as you type, before you click Compute (ALC-03.1).</li>
+        <li><b>Add-on loan related fees</b>: chattel mortgage fees (upfront or financed) and comprehensive motor insurance by body type (first year or multi-year, upfront or financed) (ALC-03.1).</li>
+        <li><b>Results by loan term</b>: one table covers every term available to you, with sideways scrolling on small screens (ALC-04).</li>
+        <li><b>Messages that follow your choices</b>: the note under the table and the "pay before vehicle release" box match the ten fee scenarios in Annex 2 (ALC-04).</li>
+        <li><b>Dealer quote comparison</b>: enter a dealer's monthly quote to see how much you save (ALC-04 4.1).</li>
+        <li><b>Accordion stepper</b>: the form is split into three steps that open one after another. Authors can switch the stepper off (ALC-05).</li>
+        <li><b>Comma formatting</b>: thousands separators appear as you type or paste, and the cursor stays in place (ALC-03.2).</li>
+        <li><b>Pre-filled from other tools</b>: link to the page with <code>?category=new&amp;ehv=yes&amp;price=1500000</code> to fill in the form from Auto Finder or Pre-Qualification (ALC-02 #3).</li>
+        <li><b>Quick tools carousel</b> and <b>tooltips</b> on each field.</li>
+      </ul>
+      <h4>Changed</h4>
+      <ul>
+        <li>Compute and Reset stay disabled until the required fields are filled in (ALC-02 #4).</li>
+        <li>The results area shows only its headers until you click Compute (ALC-02 #5).</li>
+        <li>The interest rates come from the regular and EHV tables in Annex 1 instead of the V1 promo rates.</li>
+      </ul>
+      <h4>Assumptions (to confirm with the business)</h4>
+      <ul>
+        <li>The insurance rates by body type are placeholders, because Annex 4 was not attached to the request.</li>
+        <li>Chattel mortgage fees are 1.85% of the loan amount, the same rate V1 uses for its loan related fees.</li>
+        <li>Each later insurance year is priced on a vehicle value 10% lower than the year before.</li>
+        <li>The maximum downpayment is 80%. The minimum Desired Monthly Payment is PHP 8,000.</li>
+        <li>Instead of locking the Vehicle Price field when the downpayment is below the minimum (ALC-03.1 2.3c), V2 shows an error.</li>
+      </ul>
+    </div>
+    <div class="rel">
+      <h3>Version 1.0</h3>
+      <div class="meta">13 November 2026 · Initial mock</div>
+      <ul>
+        <li>Brand, model and variant pickers that fill in the vehicle price.</li>
+        <li>Vehicle price (minimum PHP 500,000) and loan term from 12 to 60 months.</li>
+        <li>Side-by-side results for 20% and 30% downpayment: loan amount, loan related fees, promo fee waiver, monthly amortization and total amortization.</li>
+        <li>Promo rates and the fee waiver tiers match the reference calculator.</li>
+      </ul>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const peso = n => "PHP " + Math.round(n).toLocaleString("en-PH");
+const num = n => Math.round(n).toLocaleString("en-PH");
+const parseNum = s => Number(String(s).replace(/[^\d.]/g, "")) || 0;
+const $ = id => document.getElementById(id);
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+/* =============================================== Version switch =============================================== */
+function setVersion(v) {
+  $("v1").hidden = v !== "1";
+  $("v2").hidden = v !== "2";
+  document.querySelectorAll(".vswitch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.ver === v)));
+  store("alc-version", v);
+}
+document.querySelectorAll(".vswitch button").forEach(b => b.onclick = () => setVersion(b.dataset.ver));
+const qs = new URLSearchParams(location.search);
+setVersion(qs.get("v") === "1" ? "1" : qs.get("v") === "2" ? "2" : (store("alc-version") || "2"));
+
+$("openNotes").onclick = () => $("notes").showModal();
+$("closeNotes").onclick = () => $("notes").close();
+$("notes").addEventListener("click", e => { if (e.target === $("notes")) $("notes").close(); });
+
+/* ================================================== V1 (as-is) ================================================== */
+(() => {
+  const TERMS = {
+    12: { eir: 7.00, factor: 0.0874 },
+    18: { eir: 7.50, factor: 0.05950531 },
+    24: { eir: 8.00, factor: 0.04568335 },
+    36: { eir: 8.50, factor: 0.03188335 },
+    48: { eir: 8.75, factor: 0.02501469 },
+    60: { eir: 8.75, factor: 0.020845 },
+  };
+  const MIN_PRICE = 500000, FEE_RATE = 0.0185, DOWN = [0.20, 0.30];
+  const waiver = loan => loan < 1e6 ? 5000 : loan < 1.5e6 ? 10000 : loan < 2e6 ? 15000 : loan < 2.5e6 ? 20000 : loan < 3e6 ? 25000 : 30000;
+  const CATALOG = {
+    "Aurora Motors": { "Breeze": { "1.2 MT": 728000, "1.2 CVT": 798000 }, "Summit SUV": { "2.0 AT": 1465000, "2.4 4x4 AT": 1890000 } },
+    "Kestrel": { "Volt EV": { "Standard Range": 1598000, "Long Range": 2150000 }, "Harbor Pickup": { "2.4 MT": 1120000, "2.8 AT 4x4": 1745000 } },
+    "Nordway": { "Metro HEV": { "1.5 Hybrid": 1335000 }, "Grand Tourer": { "3.0 Premium": 3890000 } },
+  };
+  const fill = (sel, items, ph) => { sel.innerHTML = `<option value="">${ph}</option>` + items.map(v => `<option>${v}</option>`).join(""); sel.disabled = !items.length; };
+  const B = $("v1-brand"), M = $("v1-model"), V = $("v1-variant"), P = $("v1-price");
+  fill(B, Object.keys(CATALOG), "Select Brand");
+  B.onchange = () => { fill(M, B.value ? Object.keys(CATALOG[B.value]) : [], "Select Model"); fill(V, [], "Select Variant"); };
+  M.onchange = () => fill(V, M.value ? Object.keys(CATALOG[B.value][M.value]) : [], "Select Variant");
+  V.onchange = () => { if (V.value) { P.value = peso(CATALOG[B.value][M.value][V.value]); clearErr(); } };
+  P.addEventListener("input", e => { const n = parseNum(e.target.value); e.target.value = n ? peso(n) : ""; clearErr(); });
+  function clearErr() { $("v1-priceErr").textContent = ""; P.classList.remove("invalid"); }
+  function showErr(m) { $("v1-priceErr").textContent = m; P.classList.add("invalid"); }
+  const ROWS = [
+    ["Downpayment Amount", "", r => r.down], ["Loan Amount", "", r => r.loan], ["Loan Related Fees", "", r => r.fees],
+    ["Less Discount", "Wheels Fest Promo – Waived Fees", r => r.waived, "neg"], ["Pay Only", "", r => r.payOnly],
+    ["Monthly Amortization", "Wheels Fest Promo – Low Rates", r => r.monthly, "", true], ["Total Amortization for the loan term", "", r => r.total],
+  ];
+  const render = res => $("v1-rows").innerHTML = ROWS.map(([l, s, g, c, h]) =>
+    `<tr class="${h ? "hl" : ""}"><th>${l}${s ? `<small>${s}</small>` : ""}</th>` +
+    res.map(r => `<td class="${c || ""}">${r ? (c === "neg" ? "− " : "") + peso(g(r)) : "PHP 0"}</td>`).join("") + `</tr>`).join("");
+  const compute = (price, term) => DOWN.map(d => {
+    const down = price * d, loan = price - down, fees = Math.round(loan * FEE_RATE), waived = Math.min(waiver(loan), fees);
+    const monthly = Math.round(loan * TERMS[term].factor);
+    return { down, loan, fees, waived, payOnly: fees - waived, monthly, total: monthly * term };
+  });
+  $("v1-form").onsubmit = e => {
+    e.preventDefault();
+    const price = parseNum(P.value);
+    if (!price) return showErr("Please enter an amount");
+    if (price < MIN_PRICE) return showErr("Please enter an amount equal to or higher than 500,000");
+    const term = Number($("v1-term").value);
+    $("v1-rPrice").textContent = peso(price); $("v1-rTerm").textContent = term + " months"; $("v1-rRate").textContent = TERMS[term].eir.toFixed(2) + "%";
+    render(compute(price, term));
+  };
+  $("v1-reset").onclick = () => {
+    $("v1-form").reset(); fill(M, [], "Select Model"); fill(V, [], "Select Variant");
+    ["v1-rPrice", "v1-rTerm", "v1-rRate"].forEach(id => $(id).textContent = "-"); clearErr(); render([null, null]);
+  };
+  render([null, null]);
+})();
+
+/* ===================================================== V2 ===================================================== */
+(() => {
+  // ---- Authorable configuration (stands in for AEM authoring) ----
+  const CFG = {
+    minPrice: 500000,
+    minMonthly: 8000,
+    maxDpPct: 80,
+    minDpPct: { new: 20, used: 30 },
+    basisTerm: { new: 60, used: 48 },          // term used for instant estimates and the header rate
+    cmFeeRate: 0.0185,                          // assumption: chattel mortgage fees as % of loan
+    insDepreciation: 0.10,                      // assumption: value drops 10% for each later insurance year
+    bodyTypes: {                                // assumption: Annex 4 not supplied
+      "Sedan / Hatchback": 0.025,
+      "SUV / Crossover": 0.026,
+      "MPV / AUV / Van": 0.027,
+      "Pickup": 0.030,
+    },
+    // Annex 1. eir = annual effective rate (displayed); std = add-on rate for the whole term (used to compute).
+    rates: {
+      regular: { 60: { eir: 10.50, std: 30.26 }, 48: { eir: 10.25, std: 23.55 }, 36: { eir: 10.00, std: 17.33 } },
+      used:    { 48: { eir: 13.00, std: 30.06 }, 36: { eir: 13.00, std: 22.52 }, 24: { eir: 12.00, std: 14.11 } },
+      ehv:     { 60: { eir: 8.50, std: 24.34 }, 48: { eir: 8.25, std: 18.93 }, 36: { eir: 8.00, std: 13.94 },
+                 24: { eir: 7.75, std: 9.36 }, 18: { eir: 7.25, std: 6.90 }, 12: { eir: 7.00, std: 4.88 } },
+    },
+  };
+
+  const S = { driver: null, dpTouched: false, computed: false };
+  const el = {
+    price: $("v2-price"), dp: $("v2-dp"), slider: $("v2-dpSlider"), dpPct: $("v2-dpPct"), monthly: $("v2-monthly"),
+    loanAmt: $("v2-loanAmt"), loanAmtWrap: $("loanAmtWrap"), monthlyLbl: $("monthlyLbl"),
+    cmOn: $("cmOn"), cmMode: $("cmMode"), insOn: $("insOn"), insCover: $("insCover"), insMode: $("insMode"), bodyType: $("bodyType"),
+    compute: $("v2-compute"), reset: $("v2-reset"),
+  };
+  el.bodyType.innerHTML += Object.keys(CFG.bodyTypes).map(b => `<option>${b}</option>`).join("");
+
+  const cat = () => document.querySelector('input[name=cat]:checked').value;
+  const ehv = () => cat() === "new" && document.querySelector('input[name=ehv]:checked').value === "yes";
+  const rateTable = () => cat() === "used" ? CFG.rates.used : ehv() ? CFG.rates.ehv : CFG.rates.regular;
+  const terms = () => Object.keys(rateTable()).map(Number).sort((a, b) => b - a);
+  const basis = () => CFG.basisTerm[cat()];
+  const minDp = () => CFG.minDpPct[cat()];
+  const monthlyFor = (loan, term) => Math.round(loan * (1 + rateTable()[term].std / 100) / term);
+
+  // ---- ALC-03.2 Comma formatting that keeps the caret position ----
+  function commaFormat(input) {
+    input.addEventListener("input", () => {
+      const pos = input.selectionStart, before = input.value.slice(0, pos).replace(/\D/g, "").length;
+      const digits = input.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 12);
+      input.value = digits ? Number(digits).toLocaleString("en-PH") : "";
+      let i = 0, seen = 0;
+      while (i < input.value.length && seen < before) { if (/\d/.test(input.value[i])) seen++; i++; }
+      input.setSelectionRange(i, i);
+    });
+  }
+  [el.price, el.dp, el.monthly, $("v2-dealer")].forEach(commaFormat);
+
+  const setErr = (id, msg, input) => { $(id).textContent = msg || ""; if (input) input.classList.toggle("invalid", !!msg); };
+
+  // ---- Category / EHV changes ----
+  function onCategory() {
+    const used = cat() === "used";
+    $("ehv-wrap").hidden = used;
+    $("addonStep").hidden = used || (S.driver === "monthly" && !$("cfgAddonMonthly").checked);
+    $("insAddon").hidden = $("cfgInsEhv").checked && ehv();
+    el.slider.min = minDp();
+    $("monthlyTip").dataset.tip = `Enter what you can pay each month and we will estimate the vehicle price you can afford over ${basis()} months.`;
+    $("dealerTerm").textContent = basis();
+    if (!S.dpTouched) el.slider.value = minDp();
+    recalc();
+  }
+  document.querySelectorAll('input[name=cat], input[name=ehv]').forEach(r => r.addEventListener("change", onCategory));
+  ["cfgAddonMonthly", "cfgInsEhv"].forEach(id => $(id).addEventListener("change", onCategory));
+
+  // ---- Inputs ----
+  el.price.addEventListener("input", () => { S.driver = el.price.value ? "price" : null; S.dpTouched = false; el.slider.value = minDp(); recalc(); });
+  el.monthly.addEventListener("input", () => { S.driver = el.monthly.value ? "monthly" : null; S.dpTouched = false; el.slider.value = minDp(); recalc(); });
+  el.dp.addEventListener("input", () => {
+    const price = parseNum(el.price.value);
+    S.dpTouched = true;
+    if (price) el.slider.value = Math.max(+el.slider.min, Math.min(CFG.maxDpPct, Math.round(parseNum(el.dp.value) / price * 100)));
+    recalc("dp");
+  });
+  el.slider.addEventListener("input", () => { S.dpTouched = true; recalc("slider"); });
+
+  function recalc(source) {
+    const used = cat() === "used";
+    let price = parseNum(el.price.value), monthly = parseNum(el.monthly.value);
+    let dpErr = "";
+
+    // Driver: Desired Monthly Payment → work back to price
+    if (S.driver === "monthly") {
+      el.price.disabled = true;
+      el.monthly.disabled = false;
+      el.monthlyLbl.textContent = "Desired Monthly Payment";
+      if (monthly >= CFG.minMonthly) {
+        setErr("v2-monthlyErr", "");
+        const loan = Math.round(monthly * basis() / (1 + rateTable()[basis()].std / 100));
+        price = Math.round(loan / (1 - minDp() / 100));
+        el.price.value = num(price);
+        el.dp.value = num(price - loan);
+        el.slider.value = minDp();
+        el.loanAmt.value = num(loan);
+        el.loanAmtWrap.hidden = false;
+      } else {
+        setErr("v2-monthlyErr", monthly ? `Please enter an amount equal to or higher than ${num(CFG.minMonthly)}` : "", el.monthly);
+        el.price.value = ""; el.dp.value = ""; el.loanAmtWrap.hidden = true;
+      }
+      el.dp.disabled = true; el.slider.disabled = true;
+      setErr("v2-priceErr", "", el.price);
+    }
+    // Driver: Vehicle Price → downpayment and 60-month payment
+    else {
+      el.price.disabled = false;
+      el.loanAmtWrap.hidden = true;
+      el.monthlyLbl.textContent = S.driver === "price" ? "Monthly Payment" : "Desired Monthly Payment";
+      el.monthly.disabled = S.driver === "price";
+      if (S.driver === "price") {
+        if (price >= CFG.minPrice) {
+          setErr("v2-priceErr", "", el.price);
+          el.dp.disabled = false; el.slider.disabled = false;
+          let dp;
+          if (source === "dp") {
+            dp = parseNum(el.dp.value);
+            const pct = dp / price * 100;
+            if (pct < minDp() - 1e-9) dpErr = `Downpayment must be at least ${minDp()}% (${peso(price * minDp() / 100)})`;
+            else if (pct > CFG.maxDpPct + 1e-9) dpErr = `Downpayment can't be more than ${CFG.maxDpPct}% (${peso(price * CFG.maxDpPct / 100)})`;
+          } else {
+            dp = Math.round(price * el.slider.value / 100);
+            el.dp.value = num(dp);
+          }
+          const loan = price - dp;
+          el.monthly.value = dpErr ? "" : num(monthlyFor(loan, basis()));
+        } else {
+          setErr("v2-priceErr", `Please enter an amount equal to or higher than ${num(CFG.minPrice)}`, el.price);
+          el.dp.value = ""; el.monthly.value = ""; el.dp.disabled = true; el.slider.disabled = true;
+        }
+      } else {
+        // nothing entered yet
+        setErr("v2-priceErr", "", el.price); setErr("v2-monthlyErr", "", el.monthly);
+        el.dp.value = ""; el.monthly.value = ""; el.dp.disabled = true; el.slider.disabled = true; el.monthly.disabled = false;
+      }
+    }
+    setErr("v2-dpErr", dpErr, el.dp);
+    const p = parseNum(el.price.value), d = parseNum(el.dp.value);
+    el.dpPct.textContent = p && d ? (d / p * 100).toFixed(1).replace(/\.0$/, "") + "%" : "–";
+
+    // Add-on section visibility (hidden in monthly mode unless the author shows it; never for pre-owned)
+    $("addonStep").hidden = used || (S.driver === "monthly" && !$("cfgAddonMonthly").checked);
+    $("cmOpts").hidden = !el.cmOn.checked;
+    $("insOpts").hidden = !el.insOn.checked;
+
+    const ok = isValid();
+    el.compute.disabled = !ok;
+    el.reset.disabled = !S.driver && !el.cmOn.checked && !el.insOn.checked;
+    updateSteps();
+    if (S.computed && ok) compute(); // keep results live once shown
+  }
+
+  const addonsActive = () => !$("addonStep").hidden;
+  const cmChoice = () => addonsActive() && el.cmOn.checked ? el.cmMode.value : "";
+  const insChoice = () => addonsActive() && el.insOn.checked && !$("insAddon").hidden
+    ? { body: el.bodyType.value, cover: el.insCover.value, mode: el.insMode.value } : null;
+
+  function isValid() {
+    const p = parseNum(el.price.value), d = parseNum(el.dp.value);
+    if (!p || p < CFG.minPrice || $("v2-dpErr").textContent || $("v2-monthlyErr").textContent) return false;
+    if (S.driver === "monthly" && parseNum(el.monthly.value) < CFG.minMonthly) return false;
+    if (!(d >= 0)) return false;
+    if (addonsActive() && el.cmOn.checked && !el.cmMode.value) return false;
+    const ins = insChoice();
+    if (ins && (!ins.body || !ins.cover || !ins.mode)) return false;
+    return true;
+  }
+
+  // ---- ALC-05 Accordion stepper ----
+  const steps = [...document.querySelectorAll("#v2-steps .step")];
+  steps.forEach(s => s.querySelector(".step-h").onclick = () => { steps.forEach(x => x.classList.toggle("open", x === s && !s.classList.contains("open"))); });
+  const stepDone = {
+    1: () => true,
+    2: () => { const p = parseNum(el.price.value); return p >= CFG.minPrice && !$("v2-dpErr").textContent && !$("v2-monthlyErr").textContent; },
+    3: () => isValid(),
+  };
+  let lastDone = { 1: false, 2: false, 3: false };
+  function updateSteps() {
+    steps.forEach(s => {
+      const n = s.dataset.step, done = stepDone[n]();
+      s.classList.toggle("done", done);
+      s.querySelector(".step-n").textContent = done ? "✓" : n;
+      // auto-advance: open the next step the moment this one becomes complete (only for steps 1→2)
+      if (done && !lastDone[n] && n === "1" && s.classList.contains("open")) openStep(2);
+      lastDone[n] = done;
+    });
+  }
+  function openStep(n) { steps.forEach(x => x.classList.toggle("open", x.dataset.step === String(n))); }
+  document.querySelectorAll('input[name=ehv]').forEach(r => r.addEventListener("change", () => { if ($("cfgStepper").checked) openStep(2); }));
+  el.price.addEventListener("blur", () => { if ($("cfgStepper").checked && stepDone[2]() && !$("addonStep").hidden) openStep(3); });
+  el.monthly.addEventListener("blur", () => { if ($("cfgStepper").checked && stepDone[2]() && !$("addonStep").hidden) openStep(3); });
+  $("cfgStepper").addEventListener("change", e => { $("v2-steps").classList.toggle("flat", !e.target.checked); store("alc-stepper", e.target.checked ? "1" : "0"); });
+
+  [el.cmOn, el.cmMode, el.insOn, el.insCover, el.insMode, el.bodyType].forEach(x => x.addEventListener("change", () => recalc()));
+
+  // ---- Insurance ----
+  const insYear = (price, rate, year) => Math.round(price * (1 - CFG.insDepreciation * (year - 1)) * rate);
+  const insTotal = (price, rate, years) => { let t = 0; for (let y = 1; y <= years; y++) t += insYear(price, rate, y); return t; };
+
+  // ---- Compute (ALC-04) ----
+  function compute() {
+    const price = parseNum(el.price.value), dp = parseNum(el.dp.value), baseLoan = price - dp;
+    const cm = cmChoice(), ins = insChoice();
+    const cmFee = Math.round(baseLoan * CFG.cmFeeRate);
+    const rate = ins ? CFG.bodyTypes[ins.body] : 0;
+    const ts = terms();
+
+    const cols = ts.map(t => {
+      const years = Math.ceil(t / 12);
+      const insAmt = ins ? (ins.cover === "multi" ? insTotal(price, rate, years) : insYear(price, rate, 1)) : 0;
+      const finCm = cm === "financed" ? cmFee : 0;
+      const finIns = ins && ins.mode === "financed" ? insAmt : 0;
+      const loan = baseLoan + finCm + finIns;
+      const monthly = monthlyFor(loan, t);
+      return { t, finCm, finIns, insAmt, loan, monthly, total: monthly * t, ...rateTable()[t] };
+    });
+
+    $("v2-rPrice").textContent = peso(price);
+    $("v2-rDp").textContent = `${peso(dp)} (${(dp / price * 100).toFixed(1).replace(/\.0$/, "")}%)`;
+    $("v2-rRate").textContent = rateTable()[basis()].eir.toFixed(2) + "%";
+    $("v2-rRateTerm").textContent = `(${basis()} months)`;
+
+    $("v2-head").innerHTML = `<tr><th>Loan Term</th>${cols.map(c => `<th>${c.t} months</th>`).join("")}</tr>`;
+    const row = (label, f, cls = "", sub = "") => `<tr class="${cls}"><th>${label}${sub ? `<small>${sub}</small>` : ""}</th>${cols.map(c => `<td>${f(c)}</td>`).join("")}</tr>`;
+    let rows = row("Loan Amount", () => peso(baseLoan));
+    if (cm === "financed") rows += row("Add: Chattel Mortgage Fees", c => peso(c.finCm), "sub", "All-in financing");
+    if (ins && ins.mode === "financed") rows += row("Add: Comprehensive Motor Insurance", c => peso(c.finIns), "sub", ins.cover === "multi" ? "Multi-year, all-in financing" : "First year, all-in financing");
+    if (cm === "financed" || (ins && ins.mode === "financed")) rows += row("Total Amount Financed", c => peso(c.loan));
+    rows += row("Annual Effective Interest Rate", c => c.eir.toFixed(2) + "%", "sub");
+    rows += row("Monthly Amortization", c => peso(c.monthly), "hl", ehv() ? "Electric/Hybrid rates" : "");
+    rows += row("Total Amortization for the loan term", c => peso(c.total));
+    $("v2-rows").innerHTML = rows;
+
+    renderBoxes(cm, ins, cmFee, cols, price, rate);
+    renderSavings(cols);
+    $("v2-placeholder").hidden = true;
+    $("v2-results").hidden = false;
+    S.computed = true;
+  }
+
+  // ---- Annex 2: disclaimer and upfront-fee boxes ----
+  function renderBoxes(cm, ins, cmFee, cols, price, rate) {
+    const boxes = [];
+    let disc = "";
+    const cmF = cm === "financed", cmU = cm === "upfront";
+    const insF = ins && ins.mode === "financed", insU = ins && ins.mode === "upfront";
+    const multi = ins && ins.cover === "multi";
+    const insLabel = multi ? "Multi-Year" : "First Year";
+
+    if (S.driver === "monthly" && !addonsActive()) disc = "Computation excludes CM fees and 1st year Comprehensive Motor Insurance Coverage.";   // Scenario 1
+    else if (!cm && !ins) disc = "Computation excludes CM fees and 1st year Comprehensive Motor Insurance Coverage.";                          // Scenario 2
+    else if (!cm && insU) disc = "Computation excludes CM fees and Comprehensive Motor Insurance Coverage.";                                   // Scenario 3, 4
+    else if (!cm && insF) disc = `Computation includes ${multi ? "Multi-Year" : "1st year"} Comprehensive Motor Insurance and excludes CM fees.`;
+    else if (cmU && !ins) disc = "Computation excludes CM fees and 1st year Comprehensive Motor Insurance Coverage.";
+    else if (cmU && insU) disc = "";                                                                                                             // Scenario 5
+    else if (cmF && insF) disc = `Computation includes CM fees and ${multi ? "Multi-Year" : "1st year"} Comprehensive Motor Insurance Coverage.`; // Scenario 6, 10
+    else if (cmF && insU) disc = "Computation includes CM fees.";                                                                               // Scenario 7, 8
+    else if (cmF && !ins) disc = "Computation includes CM fees and excludes Comprehensive Motor Insurance Coverage.";
+    else if (cmU && insF) disc = `Computation includes ${multi ? "Multi-Year" : "1st year"} Comprehensive Motor Insurance.`;                    // Scenario 9
+
+    // Upfront items
+    const up = [];
+    if (cmU) up.push(`<div class="kv"><span>Estimated Chattel Mortgage Fees</span><b>${peso(cmFee)}</b></div>`);
+    if (insU && !multi) up.push(`<div class="kv"><span>Estimated ${insLabel} Motor Insurance Coverage</span><b>${peso(cols[0].insAmt)}</b></div>`);
+    if (insU && multi) up.push(`<div><span>Estimated ${insLabel} Motor Insurance Coverage</span><div class="kvs">${cols.map(c => `<span>${c.t} Months <b>${peso(c.insAmt)}</b></span>`).join("")}</div></div>`);
+    if (up.length) boxes.push(`<div class="box"><h4>${cmU && insU ? "Loan Related Fees to be paid before vehicle release" : "To be paid upfront"}</h4>${up.join("")}</div>`);
+    if (disc) boxes.push(`<div class="box disc">${disc}</div>`);
+    $("v2-boxes").innerHTML = boxes.join("");
+  }
+
+  function renderSavings(cols) {
+    const dealer = parseNum($("v2-dealer").value);
+    const c = cols.find(x => x.t === basis());
+    let html = "";
+    if (dealer && c) {
+      const diff = (dealer - c.monthly) * c.t;
+      html = diff > 0
+        ? `<div class="box savings">You could save ${peso(diff)} over ${c.t} months (${peso(dealer - c.monthly)} a month) compared with the dealer's quote.</div>`
+        : `<div class="box">The dealer's quote is ${peso(-diff)} lower over ${c.t} months. Talk to our account officer about matching it.</div>`;
+    }
+    $("v2-savings").innerHTML = html;
+  }
+  $("v2-dealer").addEventListener("input", () => { if (S.computed) compute(); });
+
+  $("v2-form").onsubmit = e => { e.preventDefault(); if (isValid()) compute(); };
+
+  $("v2-reset").onclick = () => {
+    $("v2-form").reset();
+    $("v2-dealer").value = "";
+    Object.assign(S, { driver: null, dpTouched: false, computed: false });
+    ["v2-rPrice", "v2-rDp", "v2-rRate"].forEach(id => $(id).textContent = "-");
+    $("v2-results").hidden = true; $("v2-placeholder").hidden = false;
+    if ($("cfgStepper").checked) openStep(1);
+    onCategory();
+  };
+
+  // ---- Prefill from Auto Finder / Pre-Qualification (ALC-02 #3) ----
+  if (store("alc-stepper") === "0") { $("cfgStepper").checked = false; $("v2-steps").classList.add("flat"); }
+  if (qs.get("category") === "used") $("cat-used").checked = true;
+  if (qs.get("ehv") === "yes") document.querySelector('input[name=ehv][value=yes]').checked = true;
+  onCategory();
+  const pre = parseNum(qs.get("price") || "");
+  if (pre) {
+    el.price.value = num(pre); S.driver = "price"; recalc();
+    if (isValid()) compute();
+  }
+})();
+</script>
+</body>
+</html>
